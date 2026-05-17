@@ -1,7 +1,7 @@
-package co.vivaeventos.eventplatform.domain.service;
+package co.vivaeventos.eventplatform.service;
 
-import co.vivaeventos.eventplatform.domain.model.Event;
-import co.vivaeventos.eventplatform.domain.repository.EventRepository;
+import co.vivaeventos.eventplatform.model.Event;
+import co.vivaeventos.eventplatform.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -49,28 +49,22 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public boolean hasAvailableCapacity(Long eventId, Integer quantity) {
-
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
-
         return event.getAvailableCapacity() >= quantity;
     }
 
     @Override
     @Transactional
     public Event reserveTickets(Long eventId, Integer quantity) {
-
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
-        if(event.getAvailableCapacity() < quantity){
+        if (event.getAvailableCapacity() < quantity) {
             throw new RuntimeException("No hay suficientes cupos disponibles");
         }
 
-        event.setAvailableCapacity(
-                event.getAvailableCapacity() - quantity
-        );
-
+        event.setAvailableCapacity(event.getAvailableCapacity() - quantity);
         return eventRepository.save(event);
     }
 }

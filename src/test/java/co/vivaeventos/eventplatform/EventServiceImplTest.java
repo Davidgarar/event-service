@@ -1,8 +1,8 @@
-package co.vivaeventos.eventplatform.domain.service;
+package co.vivaeventos.eventplatform;
 
-
-import co.vivaeventos.eventplatform.domain.model.Event;
-import co.vivaeventos.eventplatform.domain.repository.EventRepository;
+import co.vivaeventos.eventplatform.model.Event;
+import co.vivaeventos.eventplatform.repository.EventRepository;
+import co.vivaeventos.eventplatform.service.EventServiceImpl;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,14 +28,14 @@ class EventServiceImplTest {
 
     @Test
     void shouldReserveTicketsSuccessfully() {
-
-        Event event = new Event(
-                "Rock Fest",
-                "Concierto",
-                LocalDateTime.now(),
-                "Bogotá",
-                100
-        );
+        Event event = new Event();
+        event.setId(1L);
+        event.setName("Rock Fest");
+        event.setDescription("Concierto");
+        event.setEventDate(LocalDateTime.now().plusDays(30));
+        event.setLocation("Bogotá");
+        event.setTotalCapacity(100);
+        event.setAvailableCapacity(100);
 
         when(eventRepository.findById(1L))
                 .thenReturn(Optional.of(event));
@@ -50,14 +50,14 @@ class EventServiceImplTest {
 
     @Test
     void shouldThrowExceptionWhenNoCapacity() {
-
-        Event event = new Event(
-                "Rock Fest",
-                "Concierto",
-                LocalDateTime.now(),
-                "Bogotá",
-                1
-        );
+        Event event = new Event();
+        event.setId(1L);
+        event.setName("Rock Fest");
+        event.setDescription("Concierto");
+        event.setEventDate(LocalDateTime.now().plusDays(30));
+        event.setLocation("Bogotá");
+        event.setTotalCapacity(1);
+        event.setAvailableCapacity(1);
 
         when(eventRepository.findById(1L))
                 .thenReturn(Optional.of(event));
