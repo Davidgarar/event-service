@@ -3,18 +3,15 @@ package co.vivaeventos.eventplatform.delivery.rest;
 import co.vivaeventos.eventplatform.model.Event;
 import co.vivaeventos.eventplatform.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,8 +24,16 @@ public class EventController {
         this.eventService = eventService;
     }
 
+    // ✅ AGREGADO: Parámetros opcionales para conectar con el filtro de la Base de Datos
     @GetMapping
-    public ResponseEntity<List<Event>> getAllEvents() {
+    public ResponseEntity<List<Event>> getAllEvents(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        
+        // Si mandan filtros de ciudad o fecha, usamos el servicio filtrado. Si no, devuelve todos.
+        if (city != null || date != null) {
+            return ResponseEntity.ok(eventService.getFilteredEvents(city, date));
+        }
         return ResponseEntity.ok(eventService.findAll());
     }
 
@@ -39,6 +44,7 @@ public class EventController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // ✅ SE MANTIENE INTACTO tu método de búsqueda en memoria
     @GetMapping("/search")
     public ResponseEntity<List<Event>> searchEvents(
             @RequestParam(required = false) String city,
