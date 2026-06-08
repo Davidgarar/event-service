@@ -30,6 +30,9 @@ public class Event {
     private String location;
 
     @Column(nullable = false)
+    private Double price;
+
+    @Column(nullable = false)
     private Integer totalCapacity;
 
     @Column(nullable = false)
@@ -42,6 +45,9 @@ public class Event {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (availableCapacity == null) {
+            availableCapacity = totalCapacity;
+        }
     }
 
     @PreUpdate
