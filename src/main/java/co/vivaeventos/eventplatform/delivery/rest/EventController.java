@@ -3,15 +3,15 @@ package co.vivaeventos.eventplatform.delivery.rest;
 import co.vivaeventos.eventplatform.model.Event;
 import co.vivaeventos.eventplatform.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,8 +24,16 @@ public class EventController {
         this.eventService = eventService;
     }
 
+    // ✅ AGREGADO: Parámetros opcionales para conectar con el filtro de la Base de Datos
     @GetMapping
-    public ResponseEntity<List<Event>> getAllEvents() {
+    public ResponseEntity<List<Event>> getAllEvents(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        
+        // Si mandan filtros de ciudad o fecha, usamos el servicio filtrado. Si no, devuelve todos.
+        if (city != null || date != null) {
+            return ResponseEntity.ok(eventService.getFilteredEvents(city, date));
+        }
         return ResponseEntity.ok(eventService.findAll());
     }
 
@@ -36,6 +44,7 @@ public class EventController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // ✅ SE MANTIENE INTACTO tu método de búsqueda en memoria
     @GetMapping("/search")
     public ResponseEntity<List<Event>> searchEvents(
             @RequestParam(required = false) String city,
@@ -45,12 +54,14 @@ public class EventController {
         
         List<Event> events = eventService.findAll();
         
+        // Filtrar por ciudad
         if (city != null && !city.isEmpty()) {
             events = events.stream()
                     .filter(e -> e.getLocation().toLowerCase().contains(city.toLowerCase()))
                     .collect(Collectors.toList());
         }
         
+        // Filtrar por fecha (solo eventos futuros)
         if (fromDate != null) {
             events = events.stream()
                     .filter(e -> e.getEventDate().isAfter(fromDate))
@@ -63,12 +74,14 @@ public class EventController {
                     .collect(Collectors.toList());
         }
         
+        // Filtrar solo disponibles (con cupo > 0)
         if (onlyAvailable != null && onlyAvailable) {
             events = events.stream()
                     .filter(e -> e.getAvailableCapacity() > 0)
                     .collect(Collectors.toList());
         }
         
+        // Ordenar por fecha (próximos primero)
         events.sort(Comparator.comparing(Event::getEventDate));
         
         return ResponseEntity.ok(events);
@@ -90,27 +103,6 @@ public class EventController {
         return ResponseEntity.ok(updatedEvent);
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateEventPartial(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> updates) {
-        
-        try {
-            Event updatedEvent = eventService.updateEventPartial(id, updates);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Evento actualizado exitosamente");
-            response.put("event", updatedEvent);
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (RuntimeException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         if (!eventService.existsById(id)) {
@@ -123,8 +115,11 @@ public class EventController {
     @PostMapping("/{id}/reserve")
     public ResponseEntity<Event> reserveTickets(
             @PathVariable Long id,
-            @RequestParam Integer quantity) {
+            @RequestParam Integer quantity
+    ) {
+
         Event updatedEvent = eventService.reserveTickets(id, quantity);
+
         return ResponseEntity.ok(updatedEvent);
     }
 }

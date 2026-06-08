@@ -4,9 +4,10 @@ import co.vivaeventos.eventplatform.model.Event;
 import co.vivaeventos.eventplatform.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -70,37 +71,20 @@ public class EventServiceImpl implements EventService {
         return eventRepository.save(event);
     }
 
+    // ✅ NUEVO MÉTODO - Implementación de la lógica del filtro
     @Override
-    @Transactional
-    public Event updateEventPartial(Long id, Map<String, Object> updates) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+    @Transactional(readOnly = true)
+    public List<Event> getFilteredEvents(String city, LocalDate date) {
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
 
-        if (updates.containsKey("name")) {
-            event.setName((String) updates.get("name"));
-        }
-        if (updates.containsKey("description")) {
-            event.setDescription((String) updates.get("description"));
-        }
-        if (updates.containsKey("eventDate")) {
-            String dateStr = (String) updates.get("eventDate");
-            event.setEventDate(LocalDateTime.parse(dateStr));
-        }
-        if (updates.containsKey("location")) {
-            event.setLocation((String) updates.get("location"));
-        }
-        if (updates.containsKey("price")) {
-            Double newPrice = ((Number) updates.get("price")).doubleValue();
-            event.setPrice(newPrice);
-        }
-        if (updates.containsKey("totalCapacity")) {
-            Integer newCapacity = ((Number) updates.get("totalCapacity")).intValue();
-            event.setTotalCapacity(newCapacity);
-            if (event.getAvailableCapacity() > newCapacity) {
-                event.setAvailableCapacity(newCapacity);
-            }
+        if (date != null) {
+            startDate = date.atStartOfDay(); // 00:00:00 del día solicitado
+            endDate = date.atTime(23, 59, 59); // 23:59:59 del día solicitado
         }
 
-        return eventRepository.save(event);
+        String cityParam = (city != null && !city.trim().isEmpty()) ? city.trim() : null;
+
+        return eventRepository.filterEvents(cityParam, startDate, endDate);
     }
 }
